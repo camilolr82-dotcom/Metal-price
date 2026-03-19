@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="theme-color" content="#0D0D0D"/>
+<title>Metal Price</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0D0D0D;--bg2:#161616;--bg3:#1E1E1E;--bg4:#242424;
+  --border:#2A2A2A;--border2:#333;
+  --text:#F0F0F0;--text2:#999;--text3:#666;
+  --gold:#D4A853;--gold2:#B8892E;--gold-bg:#1A1508;
+  --silver:#C0C0C0;--silver2:#999;--silver-bg:#141414;
+  --plat:#A8B8C8;--plat2:#7A8FA0;--plat-bg:#0E1318;
+  --green:#4ADE80;--red:#F87171;--blue:#60A5FA;
+  --radius:14px;--radius-sm:8px;
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui;min-height:100vh;overflow-x:hidden}
+input{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:11px 14px;color:var(--text);font-size:15px;font-family:'Inter',system-ui;width:100%}
+input:focus{outline:1px solid var(--gold);border-color:var(--gold)}
+input::placeholder{color:var(--text3)}
+button{cursor:pointer;font-family:'Inter',system-ui}
+.card{background:var(--bg2);border-radius:var(--radius);border:1px solid var(--border);padding:16px;margin-bottom:12px}
+.pill{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500}
+.tab-bar{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
+.tab{flex:1;padding:12px 4px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text2);font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px}
+.tab.act{border-bottom-color:var(--gold);color:var(--gold)}
+.metal-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.metal-dot{width:10px;height:10px;border-radius:50%}
+.section-label{font-size:10px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px}
+.row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+.row:last-child{border-bottom:none}
+.val{font-size:14px;font-weight:600}
+.sub{font-size:11px;color:var(--text2);margin-top:2px}
+.btn-primary{width:100%;padding:14px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:var(--radius-sm);color:#000;font-weight:700;font-size:14px}
+.btn-secondary{padding:9px 14px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text2);font-size:12px;font-weight:500}
+.big-price{font-size:32px;font-weight:700;letter-spacing:-1px}
+.change-badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:6px}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--border2);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.calc-result{background:var(--bg3);border-radius:var(--radius-sm);padding:14px;margin-top:10px;border:1px solid var(--border2)}
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
+.pct-input{width:80px;text-align:center;padding:8px;font-size:16px;font-weight:600;color:var(--gold)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+var APP={
+  tab:"prices",
+  loading:false,
+  trm:4200,
+  lastUpdate:null,
+  metals:{
+    gold:{
+      name:"Oro",sym:"XAU",color:"#D4A853",bg:"#1A1508",
+      oz:0,prev:0,
+      buyPct:95,sellPct:102,
+      calcGr:"",calcBruto:"",calcLey:""
+    },
+    silver:{
+      name:"Plata",sym:"XAG",color:"#C0C0C0",bg:"#141414",
+      oz:0,prev:0,
+      buyPct:90,sellPct:105,
+      calcGr:"",calcBruto:"",calcLey:""
+    },
+    platinum:{
+      name:"Platino",sym:"XPT",color:"#A8B8C8",bg:"#0E1318",
+      oz:0,prev:0,
+      buyPct:88,sellPct:106,
+      calcGr:"",calcBruto:"",calcLey:""
+    }
+  },
+  editPct:null, // "gold-buy" | "gold-sell" | etc
+  calcTab:"gr" // "gr" | "ley"
+};
+
+function fU(n){return"USD "+Math.abs(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fC(n){return"COP $"+Math.abs(Math.round(n)).toLocaleString("es-CO");}
+function fG(n){return n.toLocaleString("es-CO",{minimumFractionDigits:4,maximumFractionDigits:4});}
+function g(id){return document.getElementById(id);}
+function ts(){return new Date().toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"});}
+
+function render(){
+  g("root").innerHTML=rApp();
+}
+
+function rApp(){
+  var h='<div style="max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column">';
+  h+=rHeader();
+  h+=rTabBar();
+  h+='<div style="flex:1;overflow-y:auto;padding:16px">';
+  if(APP.tab==="prices")h+=rPrices();
+  else if(APP.tab==="calc")h+=rCalc();
+  else if(APP.tab==="settings")h+=rSettings();
+  h+='</div></div>';
+  return h;
+}
+
+function rHeader(){
+  var h='<div style="background:linear-gradient(180deg,#1A1A1A,#0D0D0D);padding:16px 16px 12px;border-bottom:1px solid #1E1E1E">';
+  h+='<div style="display:flex;justify-content:space-between;align-items:center">';
+  h+='<div>';
+  h+='<div style="font-size:20px;font-weight:700;letter-spacing:-0.5px">Metal <span style="color:#D4A853">Price</span></div>';
+  h+='<div style="font-size:10px;color:#666;margin-top:1px">Precios en tiempo real</div>';
+  h+='</div>';
+  h+='<div style="display:flex;align-items:center;gap:8px">';
+  if(APP.loading){
+    h+='<div class="spinner"></div>';
+  } else {
+    h+='<div style="text-align:right">';
+    h+='<div style="font-size:11px;color:#999">TRM: <span style="color:#D4A853;font-weight:600">'+fC(APP.trm).replace("COP ","")+'</span></div>';
+    if(APP.lastUpdate)h+='<div style="font-size:10px;color:#555">Act. '+APP.lastUpdate+'</div>';
+    h+='</div>';
+  }
+  h+='<button onclick="fetchAll()" style="width:36px;height:36px;background:#1E1E1E;border:1px solid #2A2A2A;border-radius:10px;color:#D4A853;font-size:16px;display:flex;align-items:center;justify-content:center">⟳</button>';
+  h+='</div></div></div>';
+  return h;
+}
+
+function rTabBar(){
+  var tabs=[["prices","📈","Precios"],["calc","🧮","Calcular"],["settings","⚙️","Ajustes"]];
+  var h='<div class="tab-bar">';
+  for(var i=0;i<tabs.length;i++){
+    var t=tabs[i];
+    h+='<button class="tab'+(APP.tab===t[0]?" act":"")+'" onclick="setTab(\''+t[0]+'\')"><div style="font-size:16px;margin-bottom:2px">'+t[1]+'</div>'+t[2]+'</button>';
+  }
+  h+='</div>';
+  return h;
+}
+
+function rPrices(){
+  var h='';
+  var metals=["gold","silver","platinum"];
+  for(var i=0;i<metals.length;i++){
+    var mk=metals[i];
+    var m=APP.metals[mk];
+    var grPrice=m.oz>0?(m.oz/31.1035):0;
+    var grCOP=grPrice*APP.trm;
+    var buyUSD=grPrice*(m.buyPct/100);
+    var sellUSD=grPrice*(m.sellPct/100);
+    var buyCOP=buyCOP=buyUSD*APP.trm;
+    var sellCOP=sellUSD*APP.trm;
+    var chg=m.prev>0?((m.oz-m.prev)/m.prev)*100:0;
+    var chgColor=chg>=0?"#4ADE80":"#F87171";
+
+    h+='<div style="background:'+m.bg+';border:1px solid #2A2A2A;border-radius:14px;padding:16px;margin-bottom:12px">';
+    // Header metal
+    h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
+    h+='<div style="display:flex;align-items:center;gap:10px">';
+    h+='<div style="width:36px;height:36px;border-radius:10px;background:'+m.color+'22;border:1px solid '+m.color+'44;display:flex;align-items:center;justify-content:center;font-size:18px">'+(mk==="gold"?"🥇":mk==="silver"?"🥈":"🔵")+'</div>';
+    h+='<div><div style="font-size:15px;font-weight:600">'+m.name+'</div><div style="font-size:10px;color:#666">'+m.sym+'</div></div>';
+    h+='</div>';
+    if(m.oz>0){
+      h+='<div style="text-align:right">';
+      h+='<div style="font-size:10px;color:#666;margin-bottom:2px">USD/oz</div>';
+      h+='<div style="font-size:22px;font-weight:700;color:'+m.color+'">$'+m.oz.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})+'</div>';
+      if(m.prev>0)h+='<div style="font-size:11px;color:'+chgColor+';font-weight:500">'+(chg>=0?"+":"")+chg.toFixed(2)+'%</div>';
+      h+='</div>';
+    } else {
+      h+='<div style="color:#555;font-size:12px">Sin precio</div>';
+    }
+    h+='</div>';
+
+    if(m.oz>0){
+      // Precio por gramo
+      h+='<div style="background:#00000033;border-radius:10px;padding:12px;margin-bottom:10px">';
+      h+='<div style="font-size:10px;color:#666;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Precio por gramo</div>';
+      h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+      h+='<div><div style="font-size:10px;color:#666">USD/gr</div><div style="font-size:16px;font-weight:700;color:'+m.color+'">$'+grPrice.toFixed(4)+'</div></div>';
+      h+='<div><div style="font-size:10px;color:#666">COP/gr</div><div style="font-size:16px;font-weight:700;color:'+m.color+'">'+fC(grCOP).replace("COP ","")+'</div></div>';
+      h+='</div></div>';
+
+      // Precios compra/venta
+      h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+      h+='<div style="background:#00000044;border-radius:10px;padding:11px;border:1px solid #4ADE8022">';
+      h+='<div style="font-size:9px;color:#4ADE80;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">COMPRA ('+m.buyPct+'%)</div>';
+      h+='<div style="font-size:13px;font-weight:700;color:#4ADE80">$'+buyUSD.toFixed(4)+' USD</div>';
+      h+='<div style="font-size:11px;color:#4ADE8099;margin-top:2px">'+fC(buyCOP).replace("COP ","")+'</div>';
+      h+='</div>';
+      h+='<div style="background:#00000044;border-radius:10px;padding:11px;border:1px solid #F8717122">';
+      h+='<div style="font-size:9px;color:#F87171;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">VENTA ('+m.sellPct+'%)</div>';
+      h+='<div style="font-size:13px;font-weight:700;color:#F87171">$'+sellUSD.toFixed(4)+' USD</div>';
+      h+='<div style="font-size:11px;color:#F8717199;margin-top:2px">'+fC(sellCOP).replace("COP ","")+'</div>';
+      h+='</div></div>';
+
+      // Links
+      h+='<div style="display:flex;gap:8px;margin-top:10px">';
+      h+='<a href="https://www.xe.com/currencyconverter/convert/?Amount=1&From=USD&To=COP" target="_blank" style="flex:1;padding:8px;background:#1A1A1A;border:1px solid #2A2A2A;border-radius:8px;color:#60A5FA;font-size:11px;font-weight:500;text-decoration:none;text-align:center">XE →</a>';
+      h+='<a href="https://pbit.bancodebogota.com/Indicadores/Indicadores.aspx" target="_blank" style="flex:1;padding:8px;background:#1A1A1A;border:1px solid #2A2A2A;border-radius:8px;color:#D4A853;font-size:11px;font-weight:500;text-decoration:none;text-align:center">Bco Bogotá →</a>';
+      h+='</div>';
+    }
+    h+='</div>';
+  }
+
+  // TRM card
+  h+='<div class="card">';
+  h+='<div class="section-label">Tasa de cambio</div>';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between">';
+  h+='<div><div style="font-size:22px;font-weight:700;color:#D4A853">'+fC(APP.trm).replace("COP ","")+'</div><div style="font-size:11px;color:#666;margin-top:2px">COP por 1 USD</div></div>';
+  h+='<div style="display:flex;gap:8px">';
+  h+='<a href="https://www.xe.com/currencyconverter/convert/?Amount=1&From=USD&To=COP" target="_blank" class="btn-secondary" style="text-decoration:none">XE</a>';
+  h+='<a href="https://pbit.bancodebogota.com/Indicadores/Indicadores.aspx" target="_blank" class="btn-secondary" style="text-decoration:none">BcoB</a>';
+  h+='</div></div></div>';
+
+  return h;
+}
+
+function rCalc(){
+  var h='';
+  // Metal selector
+  h+='<div style="display:flex;gap:8px;margin-bottom:16px">';
+  var metals=[["gold","🥇","Oro"],["silver","🥈","Plata"],["platinum","🔵","Platino"]];
+  for(var i=0;i<metals.length;i++){
+    var mk=metals[i][0],ico=metals[i][1],nm=metals[i][2];
+    var sel=APP.calcMetal===mk;
+    h+='<button onclick="APP.calcMetal=\''+mk+'\';render()" style="flex:1;padding:10px 4px;border-radius:10px;border:1px solid '+(sel?"#D4A853":"#2A2A2A")+';background:'+(sel?"#1A1508":"#161616")+';color:'+(sel?"#D4A853":"#666")+';font-size:11px;font-weight:600"><div style="font-size:18px;margin-bottom:3px">'+ico+'</div>'+nm+'</button>';
+  }
+  h+='</div>';
+
+  var mk=APP.calcMetal||"gold";
+  var m=APP.metals[mk];
+  var grPrice=m.oz>0?(m.oz/31.1035):0;
+  var grCOP=grPrice*APP.trm;
+
+  if(m.oz===0){
+    h+='<div style="text-align:center;padding:40px 20px;color:#555"><div style="font-size:32px;margin-bottom:8px">📡</div><div>Toca ⟳ para cargar precios primero</div></div>';
+    return h;
+  }
+
+  // Tabs calc type
+  h+='<div style="display:flex;gap:8px;margin-bottom:16px">';
+  h+='<button onclick="APP.calcTab=\'gr\';render()" style="flex:1;padding:10px;border-radius:10px;border:1px solid '+(APP.calcTab==="gr"?"#D4A853":"#2A2A2A")+';background:'+(APP.calcTab==="gr"?"#1A1508":"#161616")+';color:'+(APP.calcTab==="gr"?"#D4A853":"#666")+';font-size:12px;font-weight:600">Por gramos</button>';
+  h+='<button onclick="APP.calcTab=\'ley\';render()" style="flex:1;padding:10px;border-radius:10px;border:1px solid '+(APP.calcTab==="ley"?"#D4A853":"#2A2A2A")+';background:'+(APP.calcTab==="ley"?"#1A1508":"#161616")+';color:'+(APP.calcTab==="ley"?"#D4A853":"#666")+';font-size:12px;font-weight:600">Peso bruto + Ley</button>';
+  h+='</div>';
+
+  h+='<div class="card" style="background:'+m.bg+'">';
+  h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">';
+  h+='<div style="font-size:11px;color:#666">Precio actual: <span style="color:'+m.color+';font-weight:600">$'+grPrice.toFixed(4)+' USD/gr</span> · <span style="color:'+m.color+'">'+fC(grCOP).replace("COP ","")+'</span></div>';
+  h+='</div>';
+
+  if(APP.calcTab==="gr"){
+    // Calculadora por gramos
+    h+='<div class="section-label">Cantidad de gramos</div>';
+    h+='<input type="number" step="0.001" placeholder="Ej: 25.5" id="inp-gr" value="'+(m.calcGr||"")+'" onchange="APP.metals[\''+mk+'\'].calcGr=this.value;calcGrResult(\''+mk+'\')" oninput="APP.metals[\''+mk+'\'].calcGr=this.value;calcGrResult(\''+mk+'\')" style="font-size:20px;font-weight:600;text-align:center;color:'+m.color+'"/>';
+
+    var gr=parseFloat(m.calcGr)||0;
+    if(gr>0){
+      var totalUSD=gr*grPrice;
+      var totalCOP=totalUSD*APP.trm;
+      var buyTotalUSD=totalUSD*(m.buyPct/100);
+      var sellTotalUSD=totalUSD*(m.sellPct/100);
+      h+='<div class="calc-result">';
+      h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">';
+      h+='<div><div style="font-size:10px;color:#666">Valor SPOT USD</div><div style="font-size:18px;font-weight:700;color:'+m.color+'">'+(totalUSD).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})+'</div></div>';
+      h+='<div><div style="font-size:10px;color:#666">Valor SPOT COP</div><div style="font-size:18px;font-weight:700;color:'+m.color+'">'+fC(totalCOP).replace("COP ","")+'</div></div>';
+      h+='</div>';
+      h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+      h+='<div style="background:#4ADE8011;border:1px solid #4ADE8022;border-radius:8px;padding:10px"><div style="font-size:9px;color:#4ADE80;margin-bottom:4px">PRECIO COMPRA ('+m.buyPct+'%)</div><div style="font-size:14px;font-weight:700;color:#4ADE80">$'+buyTotalUSD.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})+'</div><div style="font-size:11px;color:#4ADE8077">'+fC(buyTotalUSD*APP.trm).replace("COP ","")+'</div></div>';
+      h+='<div style="background:#F8717111;border:1px solid #F8717122;border-radius:8px;padding:10px"><div style="font-size:9px;color:#F87171;margin-bottom:4px">PRECIO VENTA ('+m.sellPct+'%)</div><div style="font-size:14px;font-weight:700;color:#F87171">$'+sellTotalUSD.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})+'</div><div style="font-size:11px;color:#F8717177">'+fC(sellTotalUSD*APP.trm).replace("COP ","")+'</div></div>';
+      h+='</div></div>';
+    }
+
+  } else {
+    // Calculadora ley
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">';
+    h+='<div><div class="section-label">Peso bruto (gr)</div>';
+    h+='<input type="number" step="0.001" placeholder="Ej: 100" id="inp-bruto" value="'+(m.calcBruto||"")+'" onchange="APP.metals[\''+mk+'\'].calcBruto=this.value;render()" oninput="APP.metals[\''+mk+'\'].calcBruto=this.value;render()" style="font-size:18px;font-weight:600;text-align:center;color:'+m.color+'"/></div>';
+    h+='<div><div class="section-label">Ley / Pureza (%)</div>';
+    h+='<input type="number" step="0.01" min="0" max="100" placeholder="Ej: 92.5" id="inp-ley" value="'+(m.calcLey||"")+'" onchange="APP.metals[\''+mk+'\'].calcLey=this.value;render()" oninput="APP.metals[\''+mk+'\'].calcLey=this.value;render()" style="font-size:18px;font-weight:600;text-align:center;color:'+m.color+'"/></div>';
+    h+='</div>';
+
+    var bruto=parseFloat(m.calcBruto)||0;
+    var ley=parseFloat(m.calcLey)||0;
+    if(bruto>0&&ley>0){
+      var finos=bruto*(ley/100);
+      var totalUSD2=finos*grPrice;
+      var totalCOP2=totalUSD2*APP.trm;
+      var buyTotalUSD2=totalUSD2*(m.buyPct/100);
+      var sellTotalUSD2=totalUSD2*(m.sellPct/100);
+      h+='<div class="calc-result">';
+      h+='<div style="text-align:center;padding:8px 0;margin-bottom:10px;border-bottom:1px solid #2A2A2A">';
+      h+='<div style="font-size:11px;color:#666;margin-bottom:4px">Gramos finos '+m.name.toLowerCase()+'</div>';
+      h+='<div style="font-size:28px;font-weight:700;color:'+m.color+'">'+finos.toLocaleString("es-CO",{minimumFractionDigits:3,maximumFractionDigits:3})+'<span style="font-size:14px;color:#666;margin-left:4px">gr</span></div>';
+      h+='</div>';
+      h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">';
+      h+='<div><div style="font-size:10px;color:#666">Valor SPOT USD</div><div style="font-size:16px;font-weight:700;color:'+m.color+'">'+(totalUSD2).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})+'</div></div>';
+      h+='<div><div style="font-size:10px;color:#666">Valor SPOT COP</div><div style="font-size:16px;font-weight:700;color:'+m.color+'">'+fC(totalCOP2).replace("COP ","")+'</div></div>';
+      h+='</div>';
+      h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+      h+='<div style="background:#4ADE8011;border:1px solid #4ADE8022;border-radius:8px;padding:10px"><div style="font-size:9px;color:#4ADE80;margin-bottom:4px">COMPRA ('+m.buyPct+'%)</div><div style="font-size:14px;font-weight:700;color:#4ADE80">$'+buyTotalUSD2.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})+'</div><div style="font-size:11px;color:#4ADE8077">'+fC(buyTotalUSD2*APP.trm).replace("COP ","")+'</div></div>';
+      h+='<div style="background:#F8717111;border:1px solid #F8717122;border-radius:8px;padding:10px"><div style="font-size:9px;color:#F87171;margin-bottom:4px">VENTA ('+m.sellPct+'%)</div><div style="font-size:14px;font-weight:700;color:#F87171">$'+sellTotalUSD2.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})+'</div><div style="font-size:11px;color:#F8717177">'+fC(sellTotalUSD2*APP.trm).replace("COP ","")+'</div></div>';
+      h+='</div></div>';
+    }
+  }
+  h+='</div>';
+  return h;
+}
+
+function rSettings(){
+  var h='';
+  h+='<div class="card">';
+  h+='<div class="section-label">TRM manual (COP/USD)</div>';
+  h+='<input type="number" value="'+APP.trm+'" onchange="APP.trm=+this.value;render()" style="font-size:22px;font-weight:700;color:#D4A853;text-align:center;margin-bottom:8px"/>';
+  h+='<div style="font-size:11px;color:#555">Se actualiza automáticamente al tocar ⟳. Edita si difiere del valor oficial.</div>';
+  h+='</div>';
+
+  var metals=[["gold","🥇","Oro","#D4A853"],["silver","🥈","Plata","#C0C0C0"],["platinum","🔵","Platino","#A8B8C8"]];
+  for(var i=0;i<metals.length;i++){
+    var mk=metals[i][0],ico=metals[i][1],nm=metals[i][2],col=metals[i][3];
+    var m=APP.metals[mk];
+    h+='<div class="card">';
+    h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px"><span style="font-size:18px">'+ico+'</span><span style="font-size:14px;font-weight:600">'+nm+'</span></div>';
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">';
+    // Compra
+    h+='<div style="background:#4ADE8011;border:1px solid #4ADE8022;border-radius:10px;padding:12px">';
+    h+='<div style="font-size:10px;color:#4ADE80;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">% Compra</div>';
+    h+='<div style="display:flex;align-items:center;gap:6px">';
+    h+='<button onclick="APP.metals[\''+mk+'\'].buyPct=Math.max(1,APP.metals[\''+mk+'\'].buyPct-1);render()" style="width:30px;height:30px;background:#2A2A2A;border:none;border-radius:6px;color:#E0E0E0;font-size:16px">-</button>';
+    h+='<input type="number" value="'+m.buyPct+'" onchange="APP.metals[\''+mk+'\'].buyPct=+this.value;render()" style="flex:1;text-align:center;color:#4ADE80;font-size:18px;font-weight:700;padding:6px 4px"/>';
+    h+='<button onclick="APP.metals[\''+mk+'\'].buyPct=Math.min(200,APP.metals[\''+mk+'\'].buyPct+1);render()" style="width:30px;height:30px;background:#2A2A2A;border:none;border-radius:6px;color:#E0E0E0;font-size:16px">+</button>';
+    h+='</div>';
+    h+='<div style="font-size:10px;color:#4ADE8066;margin-top:4px;text-align:center">del precio spot</div>';
+    h+='</div>';
+    // Venta
+    h+='<div style="background:#F8717111;border:1px solid #F8717122;border-radius:10px;padding:12px">';
+    h+='<div style="font-size:10px;color:#F87171;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">% Venta</div>';
+    h+='<div style="display:flex;align-items:center;gap:6px">';
+    h+='<button onclick="APP.metals[\''+mk+'\'].sellPct=Math.max(1,APP.metals[\''+mk+'\'].sellPct-1);render()" style="width:30px;height:30px;background:#2A2A2A;border:none;border-radius:6px;color:#E0E0E0;font-size:16px">-</button>';
+    h+='<input type="number" value="'+m.sellPct+'" onchange="APP.metals[\''+mk+'\'].sellPct=+this.value;render()" style="flex:1;text-align:center;color:#F87171;font-size:18px;font-weight:700;padding:6px 4px"/>';
+    h+='<button onclick="APP.metals[\''+mk+'\'].sellPct=Math.min(200,APP.metals[\''+mk+'\'].sellPct+1);render()" style="width:30px;height:30px;background:#2A2A2A;border:none;border-radius:6px;color:#E0E0E0;font-size:16px">+</button>';
+    h+='</div>';
+    h+='<div style="font-size:10px;color:#F8717166;margin-top:4px;text-align:center">del precio spot</div>';
+    h+='</div>';
+    h+='</div></div>';
+  }
+
+  h+='<div class="card" style="text-align:center">';
+  h+='<div style="font-size:24px;margin-bottom:8px">🏆</div>';
+  h+='<div style="font-size:16px;font-weight:700;color:#D4A853;margin-bottom:4px">Metal Price</div>';
+  h+='<div style="font-size:11px;color:#555">Precios en tiempo real · Oro · Plata · Platino</div>';
+  h+='<div style="font-size:10px;color:#333;margin-top:8px">v1.0.0</div>';
+  h+='</div>';
+  return h;
+}
+
+function setTab(t){APP.tab=t;render();}
+
+// ── API CALLS ──
+function fetchAll(){
+  APP.loading=true;render();
+  Promise.all([fetchMetals(),fetchTRM()])
+  .then(function(){APP.loading=false;APP.lastUpdate=ts();render();})
+  .catch(function(){APP.loading=false;render();});
+}
+
+function fetchMetals(){
+  // GoldPrice.org - todos los metales
+  return fetch("https://data-asg.goldprice.org/dbXRates/USD")
+  .then(function(r){return r.json();})
+  .then(function(d){
+    if(d&&d.items&&d.items[0]){
+      var it=d.items[0];
+      if(it.xauPrice&&it.xauPrice>100){
+        APP.metals.gold.prev=APP.metals.gold.oz||it.xauPrice;
+        APP.metals.gold.oz=parseFloat(it.xauPrice);
+      }
+      if(it.xagPrice&&it.xagPrice>0.5){
+        APP.metals.silver.prev=APP.metals.silver.oz||it.xagPrice;
+        APP.metals.silver.oz=parseFloat(it.xagPrice);
+      }
+      if(it.xptPrice&&it.xptPrice>100){
+        APP.metals.platinum.prev=APP.metals.platinum.oz||it.xptPrice;
+        APP.metals.platinum.oz=parseFloat(it.xptPrice);
+      }
+    }
+  })
+  .catch(function(){
+    // Fallback gold-api.com para oro
+    return fetch("https://api.gold-api.com/price/XAU")
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d&&d.price){APP.metals.gold.prev=APP.metals.gold.oz||d.price;APP.metals.gold.oz=parseFloat(d.price);}
+    }).catch(function(){});
+  });
+}
+
+function fetchTRM(){
+  var hoy=new Date();
+  var yyyy=hoy.getFullYear();
+  var mm=String(hoy.getMonth()+1).padStart(2,"0");
+  var dd=String(hoy.getDate()).padStart(2,"0");
+  var fecha=yyyy+"-"+mm+"-"+dd+"T00:00:00.000";
+  return fetch("https://www.datos.gov.co/resource/32sa-8pi3.json?vigenciadesde="+fecha)
+  .then(function(r){return r.json();})
+  .then(function(d){
+    var v=d&&d[0]&&d[0].valor?parseFloat(d[0].valor):null;
+    if(v&&v>2000&&v<8000)APP.trm=Math.round(v);
+  })
+  .catch(function(){
+    return fetch("https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json")
+    .then(function(r){return r.json();})
+    .then(function(d){
+      var v=d&&d.usd&&d.usd.cop?Math.round(d.usd.cop):null;
+      if(v&&v>2000&&v<8000)APP.trm=v;
+    }).catch(function(){});
+  });
+}
+
+// Init
+APP.calcMetal="gold";
+render();
+fetchAll();
+setInterval(fetchAll,300000); // cada 5 min
+</script>
+</body>
+</html>
