@@ -108,10 +108,11 @@ var S = {
   lastUpdate: null,
   trm: 4200,
   metal: "gold",
+  grams: "",
   metals: {
-    gold:     { name:"ORO",     sym:"XAU", icon:"🥇", oz:0, prev:0, pct:95 },
-    silver:   { name:"PLATA",   sym:"XAG", icon:"🥈", oz:0, prev:0, pct:90 },
-    platinum: { name:"PLATINO", sym:"XPT", icon:"⬡",  oz:0, prev:0, pct:88 }
+    gold:     { name:"ORO",     sym:"XAU", icon:"🥇", oz:0, prev:0, pct:89 },
+    silver:   { name:"PLATA",   sym:"XAG", icon:"🥈", oz:0, prev:0, pct:89 },
+    platinum: { name:"PLATINO", sym:"XPT", icon:"⬡",  oz:0, prev:0, pct:89 }
   }
 };
 
@@ -127,13 +128,15 @@ function ts(){ return new Date().toLocaleTimeString("es-CO",{hour:"2-digit",minu
 function metalColor(mk){ return mk==="gold"?"var(--gold-light)":mk==="silver"?"var(--silver)":"var(--plat)"; }
 function metalActClass(mk){ return mk==="gold"?"act-gold":mk==="silver"?"act-silver":"act-plat"; }
 
-// Lee gramos directo del DOM — nunca fuerza re-render del input
-function getGrams(){
+// Sincroniza DOM → estado antes de re-renders
+function syncGrams(){
   var el = document.getElementById("gr-inp");
-  return el ? (parseFloat(el.value) || 0) : 0;
+  if(el) S.grams = el.value;
 }
+function getGrams(){ return parseFloat(S.grams) || 0; }
 
 function render(){
+  syncGrams(); // guarda gramos antes de reconstruir el DOM
   document.getElementById("root").innerHTML = buildHTML();
 }
 
@@ -236,7 +239,8 @@ function buildHTML(){
   h += '<div class="section"><div class="label">Gramos a calcular</div>';
   h += '<div class="gr-wrap">';
   h += '<input class="gr-input" type="number" step="0.001" placeholder="0.000" id="gr-inp"';
-  h += ' oninput="updateResult()" onchange="updateResult()"/>';
+  h += ' value="' + (S.grams || "") + '"';
+  h += ' oninput="S.grams=this.value;updateResult()" onchange="S.grams=this.value;updateResult()"/>';
   h += '<span class="gr-unit">gr</span></div></div>';
 
   // RESULTADO — div separado, se actualiza sin re-render
@@ -281,7 +285,7 @@ function buildResult(){
 
 function adjPct(d){
   var m = S.metals[S.metal];
-  m.pct = Math.min(200, Math.max(1, m.pct + d));
+  m.pct = Math.round((Math.min(200, Math.max(1, m.pct + (d * 0.5)))) * 10) / 10;
   render();
 }
 
