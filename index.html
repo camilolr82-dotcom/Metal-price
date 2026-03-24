@@ -137,9 +137,7 @@ function syncGrams(){
   if(el) S.grams = el.value;
 }
 function getGrams(){
-  // Parsea formato es-CO: puntos de miles, coma decimal → número
-  var raw = (S.grams || "").toString().replace(/\./g,"").replace(",",".");
-  return parseFloat(raw) || 0;
+  return parseFloat((S.grams || "0").toString().replace(",",".")) || 0;
 }
 
 function render(){
@@ -303,7 +301,7 @@ function buildResult(){
 
   var h = '<div class="result-block">';
   if(gr > 0 && gp > 0){
-    var grFmt = gr.toLocaleString("es-CO",{minimumFractionDigits:3,maximumFractionDigits:3});
+    var grFmt = parseFloat(S.grams||"1").toLocaleString("es-CO",{minimumFractionDigits:1,maximumFractionDigits:1});
     var formula = grFmt + " gr × " + fmtGR(gpEfectivo);
     if(S.metal === "platinum") formula += " (L840)";
     formula += " × " + S.trm.toLocaleString("es-CO") + " × " + m.pct + "%";
@@ -336,12 +334,15 @@ function calcLey(){
   var leyV  = parseFloat(S.leyPct)||0;
   if(bruto > 0 && leyV > 0){
     var finos = bruto * (leyV / 1000);
-    // 1 decimal, punto de miles, coma decimal (es-CO)
-    S.grams = finos.toLocaleString("es-CO",{minimumFractionDigits:1,maximumFractionDigits:1});
-    var el = document.getElementById("gr-inp");
-    if(el){ el.value = S.grams; }
-    updateResult();
+    // Guardar como número plano para que input type=number lo muestre
+    S.grams = finos.toFixed(1);
+  } else {
+    // Si se borraron los campos, volver a 1
+    S.grams = "1";
   }
+  var el = document.getElementById("gr-inp");
+  if(el){ el.value = S.grams; }
+  updateResult();
 }
 
 function adjPct(d){
