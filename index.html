@@ -156,13 +156,6 @@ function buildHTML(){
   h+='<a class="link-pill blue" href="https://totoro.banrep.gov.co/estadisticas-economicas/" target="_blank">BANREP →</a>';
   h+='</div></div></div></div>';
 
-  // PORCENTAJE
-  h+='<div class="section"><div class="label">Porcentaje pagable</div>';
-  h+='<div class="pct-wrap"><div class="pct-label">% del precio<br><span style="font-size:10px;color:var(--faint);font-family:var(--mono)">sobre precio spot</span></div>';
-  h+='<div class="pct-controls"><div class="pct-btn" onclick="adjPct(-1)">−</div>';
-  h+='<input class="pct-input" type="number" min="1" max="200" value="'+m.pct+'" oninput="S.metals[S.metal].pct=+this.value;updateResult()" onchange="S.metals[S.metal].pct=+this.value;render()"/>';
-  h+='<span class="pct-sym">%</span><div class="pct-btn" onclick="adjPct(1)">+</div>';
-  h+='</div></div></div>';
   // CALCULADORA LEY
   h+='<div class="section">';
   h+='<div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleLey()">';
@@ -181,8 +174,17 @@ function buildHTML(){
   // GRAMOS
   h+='<div class="section"><div class="label">Gramos a calcular</div>';
   h+='<div class="gr-wrap"><input class="gr-input" type="number" step="0.001" placeholder="0.000" id="gr-inp" value="'+(S.grams||"")+'" oninput="S.grams=this.value;updateResult()" onchange="S.grams=this.value;updateResult()"/><span class="gr-unit">gr</span></div></div>';
-  // RESULTADO
-  h+='<div class="section" style="border:none"><div class="label">Pagable</div>';
+  // RESULTADO + % inline
+  h+='<div class="section" style="border:none">';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">';
+  h+='<div class="label" style="margin-bottom:0">Pagable</div>';
+  // % pagable inline
+  h+='<div style="display:flex;align-items:center;gap:6px">';
+  h+='<div class="pct-btn" onclick="adjPct(-1)">−</div>';
+  h+='<input class="pct-input" type="number" min="1" max="200" value="'+m.pct+'" oninput="S.metals[S.metal].pct=+this.value;updateResult()" onchange="S.metals[S.metal].pct=+this.value;render()" style="width:52px"/>';
+  h+='<span class="pct-sym">%</span>';
+  h+='<div class="pct-btn" onclick="adjPct(1)">+</div>';
+  h+='</div></div>';
   h+='<div id="result-area">'+buildResult()+'</div></div>';
   if(S.lastUpdate)h+='<div class="footer">Actualización: '+S.lastUpdate+' · Auto cada 5 min</div>';
   return h;
