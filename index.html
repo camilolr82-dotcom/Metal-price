@@ -89,7 +89,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 <script>
 var S = {
   loading:false, lastUpdate:null, trm:4200, metal:"gold", grams:"1",
-  showLey:false, leyBruto:"", leyPct:"",
+  showLey:false, leyBruto:"", leyPct:"", unit:"gr",
   metals:{
     gold:    {name:"ORO",    sym:"XAU",icon:"🥇",oz:0,prev:0,pct:89},
     silver:  {name:"PLATA",  sym:"XAG",icon:"🥈",oz:0,prev:0,pct:89},
@@ -141,21 +141,41 @@ function buildHTML(){
        '<div class="metal-tab-price">'+(gpp>0?fmtGR(gpp)+" USD":"---")+'</div></div>';
   });
   h+='</div></div>';
-  // PRECIO GRAMO
-  var labelP="Precio por gramo · "+m.sym+(S.metal==="platinum"?" · LEY 840":"");
-  h+='<div class="section"><div class="label">'+labelP+'</div>';
-  if(m.oz>0){
-    h+='<div class="price-block"><div class="price-row">';
-    h+='<div class="price-col"><div class="price-tag">'+(S.metal==="platinum"?"USD/gr L840":"USD / gr")+'</div>';
-    h+='<div class="price-val" style="color:'+col+'">'+fmtGR(gpEf)+'</div>';
-    if(S.metal==="platinum")h+='<div class="ley-badge">LEY 840</div>';
-    else if(m.prev>0)h+='<div class="change-badge '+(chg>=0?"up":"dn")+'">'+(chg>=0?"+":"")+chg.toFixed(2)+'%</div>';
-    h+='</div><div class="price-divider"></div>';
-    h+='<div class="price-col" style="text-align:right"><div class="price-tag">COP / gr</div>';
-    h+='<div class="price-val" style="color:'+col+'">'+fmtCOP(gpEfCOP)+'</div>';
-    h+='<div class="price-sub">Spot oz: '+fmtOZ(m.oz)+' USD</div></div></div></div>';
-  }else{h+='<div style="text-align:center;padding:20px;color:var(--faint);font-family:var(--mono);font-size:12px">SIN DATOS · Toca ⟳</div>';}
+  // PRECIO PRINCIPAL — COP protagonista + selector unidad
+  var unitMult = S.unit==="oz" ? OZ : S.unit==="kg" ? 1000 : 1;
+  var unitLabel = S.unit==="oz" ? "/ oz" : S.unit==="kg" ? "/ kg" : "/ gr";
+  var unitSuffix = S.unit==="oz" ? " oz" : S.unit==="kg" ? " kg" : " gr";
+  var copVal = gpEf * unitMult * S.trm;
+  var usdVal = gpEf * unitMult;
+  h+='<div class="section" style="padding-bottom:14px">';
+  // Unit selector pills
+  h+='<div style="display:flex;gap:6px;margin-bottom:12px">';
+  ["gr","oz","kg"].forEach(function(u){
+    var act=S.unit===u;
+    h+='<button onclick="S.unit=''+u+'';render()" style="padding:5px 14px;border-radius:20px;border:1.5px solid '+(act?col:'var(--border2)')+';background:'+(act?'var(--surface2)':'var(--surface)')+';color:'+(act?col:'var(--muted)')+';font-family:var(--mono);font-size:11px;font-weight:700;cursor:pointer">'+u.toUpperCase()+'</button>';
+  });
   h+='</div>';
+  // Main price block
+  h+='<div style="background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:16px 18px">';
+  if(m.oz>0){
+    // COP — big
+    h+='<div style="margin-bottom:12px">';
+    h+='<div style="font-size:10px;color:var(--muted);font-family:var(--mono);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px">COP '+unitLabel+(S.metal==="platinum"?" · LEY 840":"")+'</div>';
+    h+='<div style="font-size:38px;font-weight:700;font-family:var(--mono);letter-spacing:-2px;color:'+col+';line-height:1">'+fmtCOP(copVal)+'</div>';
+    // TRM small + USD alongside
+    h+='<div style="display:flex;align-items:center;gap:12px;margin-top:6px">';
+    h+='<div style="font-size:11px;color:var(--muted);font-family:var(--mono)">'+fmtUSD(usdVal)+'</div>';
+    h+='<div style="width:1px;height:12px;background:var(--border)"></div>';
+    h+='<div style="font-size:11px;color:var(--muted);font-family:var(--mono)">TRM <span style="color:var(--gold-light);font-weight:600">'+S.trm.toLocaleString("es-CO")+'</span></div>';
+    if(S.metal==="platinum") h+='<div class="ley-badge" style="margin-top:0">LEY 840</div>';
+    else if(m.prev>0){ var sign=chg>=0?"+":""; h+='<div class="change-badge '+(chg>=0?"up":"dn")+'" style="margin-top:0">'+sign+chg.toFixed(2)+'%</div>'; }
+    h+='</div></div>';
+    // Spot oz reference small
+    h+='<div style="font-size:10px;color:var(--faint);font-family:var(--mono);border-top:1px solid var(--border);padding-top:8px">Spot oz: '+fmtOZ(m.oz)+' USD · 1 oz = '+OZ+' gr</div>';
+  }else{
+    h+='<div style="text-align:center;padding:20px;color:var(--faint);font-family:var(--mono);font-size:12px">SIN DATOS · Toca ⟳</div>';
+  }
+  h+='</div></div>';
   // PORCENTAJE
   h+='<div class="section"><div class="label">Porcentaje pagable</div>';
   h+='<div class="pct-wrap"><div class="pct-label">% del precio<br><span style="font-size:10px;color:var(--faint);font-family:var(--mono)">sobre precio spot</span></div>';
