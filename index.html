@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="theme-color" content="#080808"/>
 <title>Metal Price</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -24,7 +24,7 @@
   --silver:#BCBCBC;
   --plat:#8AABBD;
   --plat-dim:#8AABBD33;
-  --mono:'Space Mono',monospace;
+  --mono:'IBM Plex Mono',monospace;
   --sans:'DM Sans',system-ui;
 }
 body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden}
@@ -242,7 +242,7 @@ function buildHTML(){
 
   // CALCULADORA DE LEY (colapsable)
   h += '<div class="section">';
-  h += '<div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="S.showLey=!S.showLey;render()">';
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleLey()">';
   h += '<div class="label" style="margin-bottom:0">Calculadora de ley</div>';
   h += '<div style="font-family:var(--mono);font-size:12px;color:var(--muted);padding:4px 10px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px">'+(S.showLey?"CERRAR ↑":"ABRIR ↓")+'</div>';
   h += '</div>';
@@ -319,13 +319,38 @@ function buildResult(){
   return h;
 }
 
+var _leyTimer = null;
+
+function toggleLey(){
+  if(S.showLey){
+    closeLey();
+  } else {
+    S.showLey = true;
+    render();
+  }
+}
+
+function closeLey(){
+  S.showLey  = false;
+  S.leyBruto = "";
+  S.leyPct   = "";
+  S.grams    = "1";        // vuelve al predeterminado
+  clearTimeout(_leyTimer);
+  _leyTimer = null;
+  var el = document.getElementById("gr-inp");
+  if(el) el.value = "1";
+  render();
+}
+
 function selectMetal(mk){
   if(S.metal === mk) return;
-  S.metal   = mk;
-  S.grams   = "1";       // resetea gramos a 1
-  S.showLey = false;     // cierra calculadora de ley
-  S.leyBruto = "";       // limpia campos de ley
+  S.metal    = mk;
+  S.grams    = "1";
+  S.showLey  = false;
+  S.leyBruto = "";
   S.leyPct   = "";
+  clearTimeout(_leyTimer);
+  _leyTimer  = null;
   render();
 }
 
@@ -334,10 +359,18 @@ function calcLey(){
   var leyV  = parseFloat(S.leyPct)||0;
   if(bruto > 0 && leyV > 0){
     var finos = bruto * (leyV / 1000);
-    // Guardar como número plano para que input type=number lo muestre
     S.grams = finos.toFixed(1);
+    // Reinicia el timer de 1 minuto
+    clearTimeout(_leyTimer);
+    _leyTimer = setTimeout(function(){
+      S.leyBruto = "";
+      S.leyPct   = "";
+      S.grams    = "1";
+      S.showLey  = false;
+      _leyTimer  = null;
+      render();
+    }, 60000);
   } else {
-    // Si se borraron los campos, volver a 1
     S.grams = "1";
   }
   var el = document.getElementById("gr-inp");
