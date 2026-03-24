@@ -6,6 +6,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="theme-color" content="#080808"/>
+<link rel="manifest" href="/manifest.json"/>
+<link rel="apple-touch-icon" href="/icons/icon-180.png"/>
 <title>Metal Price</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
@@ -178,7 +180,7 @@ function buildHTML(){
   h += '</div></div>';
   h += '<div class="trm-links">';
   h += '<a class="link-pill" href="https://pbit.bancodebogota.com/Indicadores/Indicadores.aspx" target="_blank">BCO BOGOTÁ →</a>';
-  h += '<a class="link-pill blue" href="https://www.banrep.gov.co/es/estadisticas/trm" target="_blank">BANREP →</a>';
+  h += '<a class="link-pill blue" href="https://totoro.banrep.gov.co/estadisticas-economicas/" target="_blank">BANREP →</a>';
   h += '</div></div></div>';
 
   // SELECTOR METAL
@@ -467,6 +469,14 @@ function fetchAll(){
 render();
 fetchAll();
 setInterval(fetchAll, 300000);
+
+// Registro PWA
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('/sw.js');
+  });
+}
+
 </script>
 </body>
 </html>
