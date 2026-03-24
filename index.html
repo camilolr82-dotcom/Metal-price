@@ -136,7 +136,11 @@ function syncGrams(){
   var el = document.getElementById("gr-inp");
   if(el) S.grams = el.value;
 }
-function getGrams(){ return parseFloat(S.grams) || 0; }
+function getGrams(){
+  // Parsea formato es-CO: puntos de miles, coma decimal → número
+  var raw = (S.grams || "").toString().replace(/\./g,"").replace(",",".");
+  return parseFloat(raw) || 0;
+}
 
 function render(){
   syncGrams(); // guarda gramos antes de reconstruir el DOM
@@ -191,7 +195,7 @@ function buildHTML(){
     var mm = S.metals[mk];
     var gpp = grPrice(mm);
     var isAct = S.metal === mk;
-    h += '<div class="metal-tab' + (isAct ? " " + metalActClass(mk) : "") + '" onclick="S.metal=\'' + mk + '\';render()">';
+    h += '<div class="metal-tab' + (isAct ? " " + metalActClass(mk) : "") + '" onclick="selectMetal(\'' + mk + '\')">';
     h += '<div class="metal-tab-icon">' + mm.icon + '</div>';
     h += '<div class="metal-tab-name">' + mm.name + '</div>';
     h += '<div class="metal-tab-price">' + (gpp > 0 ? fmtGR(gpp) + " USD" : "---") + '</div>';
@@ -317,12 +321,23 @@ function buildResult(){
   return h;
 }
 
+function selectMetal(mk){
+  if(S.metal === mk) return;
+  S.metal   = mk;
+  S.grams   = "1";       // resetea gramos a 1
+  S.showLey = false;     // cierra calculadora de ley
+  S.leyBruto = "";       // limpia campos de ley
+  S.leyPct   = "";
+  render();
+}
+
 function calcLey(){
   var bruto = parseFloat(S.leyBruto)||0;
   var leyV  = parseFloat(S.leyPct)||0;
   if(bruto > 0 && leyV > 0){
     var finos = bruto * (leyV / 1000);
-    S.grams = finos.toFixed(4);
+    // 1 decimal, punto de miles, coma decimal (es-CO)
+    S.grams = finos.toLocaleString("es-CO",{minimumFractionDigits:1,maximumFractionDigits:1});
     var el = document.getElementById("gr-inp");
     if(el){ el.value = S.grams; }
     updateResult();
