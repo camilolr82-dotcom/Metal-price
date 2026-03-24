@@ -135,7 +135,7 @@ function buildHTML(){
   h+='<div class="section"><div class="label">Metal</div><div class="metal-tabs">';
   ["gold","silver","platinum"].forEach(function(mk){
     var mm=S.metals[mk],gpp=grPrice(mm),isAct=S.metal===mk;
-    h+='<div class="metal-tab'+(isAct?" "+metalActClass(mk):"")+'" onclick="selectMetal(''+mk+'')">'+
+    h+='<div class="metal-tab'+(isAct?" "+metalActClass(mk):"")+'" data-mk="'+mk+'" onclick="selectMetal(this.dataset.mk)">'+
        '<div class="metal-tab-icon">'+mm.icon+'</div>'+
        '<div class="metal-tab-name">'+mm.name+'</div>'+
        '<div class="metal-tab-price">'+(gpp>0?fmtGR(gpp)+" USD":"---")+'</div></div>';
