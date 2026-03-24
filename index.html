@@ -282,7 +282,7 @@ function fetchAll(){
     .catch(function(){S.loading=false;render();});
 }
 if('serviceWorker' in navigator){
-  var swCode='const CACHE="mp-v1";self.addEventListener("install",e=>self.skipWaiting());self.addEventListener("activate",e=>self.clients.claim());self.addEventListener("fetch",e=>{const u=e.request.url;if(u.includes("goldprice")||u.includes("gold-api")||u.includes("datos.gov")||u.includes("jsdelivr"))return;e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)));}));';
+  var swCode='const CACHE="mp-v1";self.addEventListener("install",e=>self.skipWaiting());self.addEventListener("activate",e=>self.clients.claim());self.addEventListener("fetch",e=>{const u=e.request.url;if(u.includes("goldprice")||u.includes("gold-api")||u.includes("datos.gov")||u.includes("jsdelivr"))return;e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)));});';
   var blob=new Blob([swCode],{type:'application/javascript'});
   navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(function(){});
 }
