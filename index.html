@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="theme-color" content="#080808"/>
 <title>Metal Price</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -24,7 +24,7 @@
   --silver:#BCBCBC;
   --plat:#8AABBD;
   --plat-dim:#8AABBD33;
-  --mono:'IBM Plex Mono',monospace;
+  --mono:'Roboto Mono',monospace;
   --sans:'DM Sans',system-ui;
 }
 body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden}
@@ -131,17 +131,11 @@ function ts(){ return new Date().toLocaleTimeString("es-CO",{hour:"2-digit",minu
 function metalColor(mk){ return mk==="gold"?"var(--gold-light)":mk==="silver"?"var(--silver)":"var(--plat)"; }
 function metalActClass(mk){ return mk==="gold"?"act-gold":mk==="silver"?"act-silver":"act-plat"; }
 
-// Sincroniza DOM → estado antes de re-renders
-function syncGrams(){
-  var el = document.getElementById("gr-inp");
-  if(el) S.grams = el.value;
-}
 function getGrams(){
   return parseFloat((S.grams || "0").toString().replace(",",".")) || 0;
 }
 
 function render(){
-  syncGrams(); // guarda gramos antes de reconstruir el DOM
   document.getElementById("root").innerHTML = buildHTML();
 }
 
