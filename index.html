@@ -14,7 +14,7 @@
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
   --bg:#080808;--surface:#111;--surface2:#181818;--border:#222;--border2:#2e2e2e;
-  --text:#F2F2F2;--muted:#666;--faint:#333;
+  --text:#F2F2F2;--muted:#888;--faint:#555;
   --gold:#C9922A;--gold-light:#E8B84B;--silver:#BCBCBC;--plat:#8AABBD;--plat-dim:#8AABBD33;
   --mono:'Roboto Mono',monospace;--sans:'DM Sans',system-ui;
 }
@@ -155,6 +155,17 @@ function buildHTML(){
   h+='<a class="link-pill" href="https://pbit.bancodebogota.com/Indicadores/Indicadores.aspx" target="_blank">BCO BOGOTÁ →</a>';
   h+='<a class="link-pill blue" href="https://totoro.banrep.gov.co/estadisticas-economicas/" target="_blank">BANREP →</a>';
   h+='</div></div></div></div>';
+
+  // METALES
+  h+='<div class="section"><div class="label">Metal</div><div class="metal-tabs">';
+  ["gold","silver","platinum"].forEach(function(mk){
+    var mm=S.metals[mk],gpp=grPrice(mm),isAct=S.metal===mk;
+    h+='<div class="metal-tab'+(isAct?" "+metalActClass(mk):"")+'" data-mk="'+mk+'" onclick="selectMetal(this.dataset.mk)">'+
+       '<div class="metal-tab-icon">'+mm.icon+'</div>'+
+       '<div class="metal-tab-name">'+mm.name+'</div>'+
+       '<div class="metal-tab-price">'+(gpp>0?fmtGR(gpp)+" USD":"---")+'</div></div>';
+  });
+  h+='</div></div>';
 
   // CALCULADORA LEY
   h+='<div class="section">';
