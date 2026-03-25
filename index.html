@@ -248,23 +248,27 @@ function adjPct(d){
   render();
 }
 function fetchTRM(){
-  function tryDate(date,retries){
-    var yy=date.getFullYear(),mm=String(date.getMonth()+1).padStart(2,"0"),dd=String(date.getDate()).padStart(2,"0");
-    var f=yy+"-"+mm+"-"+dd+"T00:00:00.000";
-    return fetch("https://www.datos.gov.co/resource/32sa-8pi3.json?vigenciadesde="+f)
-      .then(function(r){return r.json();})
-      .then(function(d){
-        var v=d&&d[0]&&d[0].valor?parseFloat(d[0].valor):null;
-        if(v&&v>2000&&v<8000){S.trm=Math.round(v);}
-        else if(retries>0){var p=new Date(date);p.setDate(p.getDate()-1);return tryDate(p,retries-1);}
-      });
-  }
-  return tryDate(new Date(),5).catch(function(){
-    return fetch("https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json")
-      .then(function(r){return r.json();})
-      .then(function(d){var v=d&&d.usd&&d.usd.cop?Math.round(d.usd.cop):null;if(v&&v>2000&&v<8000)S.trm=v;})
-      .catch(function(){});
-  });
+  // Primario: fawazahmed0 (tasa de mercado = XE)
+  return fetch("https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json")
+    .then(function(r){return r.json();})
+    .then(function(d){
+      var v=d&&d.usd&&d.usd.cop?Math.round(d.usd.cop):null;
+      if(v&&v>2000&&v<8000){S.trm=v;return;}
+      // Fallback: BanRep (retrocede hasta 5 días hábiles)
+      return tryBanrep(new Date(),5);
+    })
+    .catch(function(){return tryBanrep(new Date(),5);});
+}
+function tryBanrep(date,retries){
+  var yy=date.getFullYear(),mm=String(date.getMonth()+1).padStart(2,"0"),dd=String(date.getDate()).padStart(2,"0");
+  var f=yy+"-"+mm+"-"+dd+"T00:00:00.000";
+  return fetch("https://www.datos.gov.co/resource/32sa-8pi3.json?vigenciadesde="+f)
+    .then(function(r){return r.json();})
+    .then(function(d){
+      var v=d&&d[0]&&d[0].valor?parseFloat(d[0].valor):null;
+      if(v&&v>2000&&v<8000){S.trm=Math.round(v);}
+      else if(retries>0){var p=new Date(date);p.setDate(p.getDate()-1);return tryBanrep(p,retries-1);}
+    }).catch(function(){});
 }
 function fetchMetal(sym,key){
   return fetch("https://api.gold-api.com/price/"+sym)
