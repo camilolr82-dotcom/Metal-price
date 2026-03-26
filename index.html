@@ -146,11 +146,10 @@ function buildHTML(){
     h+='<button data-u="'+u+'" onclick="S.unit=this.dataset.u;render()" style="padding:4px 12px;border-radius:20px;border:1.5px solid '+(act?col:'var(--border2)')+';background:'+(act?'var(--surface2)':'var(--surface)')+';color:'+(act?col:'var(--muted)')+';font-family:var(--mono);font-size:11px;font-weight:700;cursor:pointer">'+u.toUpperCase()+'</button>';
   });
   h+='</div></div>';
-  // DERECHA — TRM
+  // DERECHA — TRM editable con formato
   h+='<div style="text-align:right;flex-shrink:0">';
   h+='<div style="font-size:9px;color:var(--muted);font-family:var(--mono);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">COP/USD</div>';
-  h+='<div style="font-size:30px;font-weight:700;font-family:var(--mono);color:#FFFFFF;letter-spacing:-1px;line-height:1">'+S.trm.toLocaleString("es-CO")+'</div>';
-  h+='<input class="trm-input" type="number" value="'+S.trm+'" oninput="S.trm=+this.value;updateResult()" onchange="S.trm=+this.value;render()" style="width:110px;font-size:13px;text-align:right;margin-top:2px;border-bottom:1px solid var(--faint)"/>';
+  h+='<div contenteditable="true" inputmode="numeric" id="trm-edit" onblur="trmBlur(this)" style="font-size:30px;font-weight:700;font-family:var(--mono);color:#FFFFFF;letter-spacing:-1px;line-height:1;text-align:right;outline:none;cursor:text;-webkit-user-select:text;user-select:text">'+S.trm.toLocaleString("es-CO")+'</div>';
   h+='<div style="font-size:10px;color:var(--faint);font-family:var(--mono);margin-top:2px">Editable'+(S.lastUpdate?' · '+S.lastUpdate:'')+'</div>';
   h+='<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;margin-top:6px">';
   h+='<a class="link-pill" href="https://pbit.bancodebogota.com/Indicadores/Indicadores.aspx" target="_blank">BCO BOGOTÁ →</a>';
@@ -242,6 +241,13 @@ function calcLey(){
   var el=document.getElementById("gr-inp");if(el)el.value=S.grams;
   updateResult();
 }
+function trmBlur(el){
+  var raw = el.innerText.replace(/[^0-9]/g,'');
+  var v = parseInt(raw);
+  if(v>2000&&v<8000) S.trm=v;
+  el.innerText = S.trm.toLocaleString('es-CO');
+  updateResult();
+}
 function adjPct(d){
   var m=S.metals[S.metal];
   m.pct=Math.round((Math.min(200,Math.max(1,m.pct+(d*0.5))))*10)/10;
@@ -252,7 +258,7 @@ function fetchTRM(){
   return fetch("https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json")
     .then(function(r){return r.json();})
     .then(function(d){
-      var v=d&&d.usd&&d.usd.cop?Math.round(d.usd.cop):null;
+      var v=d&&d.usd&&d.usd.cop?Math.round(d.usd.cop)-20:null;
       if(v&&v>2000&&v<8000){S.trm=v;return;}
       // Fallback: BanRep (retrocede hasta 5 días hábiles)
       return tryBanrep(new Date(),5);
