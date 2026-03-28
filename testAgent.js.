@@ -1,0 +1,21 @@
+import { crearArchivo } from "./devAgent.js";
+
+async function run() {
+  await crearArchivo({
+    owner: "camilolr82", // tu usuario de GitHub
+    repo: "Metal-price", // tu repositorio
+    path: "supabaseClient.js",
+    content: `
+      import { createClient } from '@supabase/supabase-js';
+
+      const supabase = createClient(
+        process.env.SUPABASE_URL,
+        process.env.SUPABASE_KEY
+      );
+
+      export default supabase;
+    `,
+  });
+}
+
+run();
