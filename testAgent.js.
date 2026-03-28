@@ -2,9 +2,9 @@ import { crearArchivo } from "./devAgent.js";
 
 async function run() {
   await crearArchivo({
-    owner: "camilolr82", // tu usuario de GitHub
-    repo: "Metal-price", // tu repositorio
-    path: "supabaseClient.js",
+    owner: "camilolr82-dotcom", // tu usuario de GitHub
+    repo: "Metal-price",        // tu repositorio
+    path: "supabaseClient.js",  // archivo que se va a crear
     content: `
       import { createClient } from '@supabase/supabase-js';
 
