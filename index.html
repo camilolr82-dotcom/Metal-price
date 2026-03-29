@@ -246,27 +246,24 @@ function trmBlur(el){
   var v = parseInt(raw);
   if(v>2000&&v<8000) S.trm=v;
   el.innerText = S.trm.toLocaleString('es-CO');
-  updateResult();
-}
+  el.innerText = S.trm.toLocaleString('es-CO');
+  render();
 function adjPct(d){
   var m=S.metals[S.metal];
   m.pct=Math.round((Math.min(200,Math.max(1,m.pct+(d*0.5))))*10)/10;
   render();
 }
 function fetchTRM(){
-  // Primario: fawazahmed0 (tasa de mercado = XE)
-  // Construir fecha de hoy para URL versionada — evita caché inconsistente entre dispositivos
-  var _d=new Date(),_yy=_d.getFullYear(),_mm=String(_d.getMonth()+1).padStart(2,"0"),_dd=String(_d.getDate()).padStart(2,"0");
-  var _dateUrl="https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@"+_yy+"-"+_mm+"-"+_dd+"/v1/currencies/usd.json";
-  return fetch(_dateUrl)
-    .then(function(r){return r.json();})
-    .then(function(d){
-      var v=d&&d.usd&&d.usd.cop?Math.round(d.usd.cop)-20:null;
-      if(v&&v>2000&&v<8000){S.trm=v;return;}
-      // Fallback: BanRep (retrocede hasta 5 días hábiles)
-      return tryBanrep(new Date(),5);
-    })
-    .catch(function(){return tryBanrep(new Date(),5);});
+  // Primario: BanRep oficial — retrocede días hábiles
+  return tryBanrep(new Date(),5)
+    .catch(function(){
+      // Fallback: fawazahmed0 mercado Forex con URL versionada por fecha
+      var _d=new Date(),_yy=_d.getFullYear(),_mm=String(_d.getMonth()+1).padStart(2,"0"),_dd=String(_d.getDate()).padStart(2,"0");
+      return fetch("https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@"+_yy+"-"+_mm+"-"+_dd+"/v1/currencies/usd.json")
+        .then(function(r){return r.json();})
+        .then(function(d){var v=d&&d.usd&&d.usd.cop?Math.round(d.usd.cop):null;if(v&&v>2000&&v<8000)S.trm=v;})
+        .catch(function(){});
+    });
 }
 function tryBanrep(date,retries){
   var yy=date.getFullYear(),mm=String(date.getMonth()+1).padStart(2,"0"),dd=String(date.getDate()).padStart(2,"0");
