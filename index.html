@@ -246,8 +246,8 @@ function trmBlur(el){
   var v = parseInt(raw);
   if(v>2000&&v<8000) S.trm=v;
   el.innerText = S.trm.toLocaleString('es-CO');
-  el.innerText = S.trm.toLocaleString('es-CO');
   render();
+}
 function adjPct(d){
   var m=S.metals[S.metal];
   m.pct=Math.round((Math.min(200,Math.max(1,m.pct+(d*0.5))))*10)/10;
