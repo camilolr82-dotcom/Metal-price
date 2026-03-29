@@ -164,7 +164,7 @@ function buildHTML(){
     h+='<div class="metal-tab'+(isAct?" "+metalActClass(mk):"")+'" data-mk="'+mk+'" onclick="selectMetal(this.dataset.mk)">'+
        '<div class="metal-tab-icon">'+mm.icon+'</div>'+
        '<div class="metal-tab-name">'+mm.name+'</div>'+
-       '<div style="font-size:11px;font-family:var(--mono);margin-top:4px;font-weight:600;color:#C9922A">'+(mm.oz>0?fmtOZ(mm.oz)+" USD":"---")+"</div></div>";
+       '<div style="font-size:14px;font-family:var(--mono);margin-top:5px;font-weight:700;color:#C9922A">'+(mm.oz>0?fmtOZ(mm.oz)+" USD":"---")+"</div></div>";
   });
   h+='</div></div>';
 
@@ -255,7 +255,10 @@ function adjPct(d){
 }
 function fetchTRM(){
   // Primario: fawazahmed0 (tasa de mercado = XE)
-  return fetch("https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json")
+  // Construir fecha de hoy para URL versionada — evita caché inconsistente entre dispositivos
+  var _d=new Date(),_yy=_d.getFullYear(),_mm=String(_d.getMonth()+1).padStart(2,"0"),_dd=String(_d.getDate()).padStart(2,"0");
+  var _dateUrl="https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@"+_yy+"-"+_mm+"-"+_dd+"/v1/currencies/usd.json";
+  return fetch(_dateUrl)
     .then(function(r){return r.json();})
     .then(function(d){
       var v=d&&d.usd&&d.usd.cop?Math.round(d.usd.cop)-20:null;
