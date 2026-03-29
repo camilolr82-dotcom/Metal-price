@@ -69,7 +69,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .pct-sym{font-family:var(--mono);font-size:16px;color:var(--muted)}
 .gr-wrap{position:relative;background:var(--surface);border:1.5px solid var(--border2);border-radius:12px;overflow:hidden;transition:border-color .15s}
 .gr-wrap:focus-within{border-color:var(--gold)}
-.gr-input{width:100%;background:none;border:none;padding:18px 60px 18px 20px;color:var(--text);font-family:var(--mono);font-size:32px;font-weight:700;letter-spacing:-1px;outline:none}
+.gr-input{width:100%;background:none;border:none;padding:13px 50px 13px 16px;color:var(--text);font-family:var(--mono);font-size:26px;font-weight:700;letter-spacing:-1px;outline:none}
 .gr-input::placeholder{color:var(--faint)}
 .gr-unit{position:absolute;right:18px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:14px;color:var(--muted)}
 .result-block{background:var(--surface);border:1px solid var(--border2);border-radius:16px;overflow:hidden}
@@ -164,8 +164,7 @@ function buildHTML(){
     h+='<div class="metal-tab'+(isAct?" "+metalActClass(mk):"")+'" data-mk="'+mk+'" onclick="selectMetal(this.dataset.mk)">'+
        '<div class="metal-tab-icon">'+mm.icon+'</div>'+
        '<div class="metal-tab-name">'+mm.name+'</div>'+
-       '<div class="metal-tab-price">'+(gpp>0?fmtGR(gpp)+" USD/gr":"---")+'</div>'+
-       '<div style="font-size:9px;font-family:var(--mono);margin-top:2px;opacity:.85;color:#C9922A">'+(mm.oz>0?fmtOZ(mm.oz)+" USD/oz":"")+"</div></div>";
+       '<div style="font-size:11px;font-family:var(--mono);margin-top:4px;font-weight:600;color:#C9922A">'+(mm.oz>0?fmtOZ(mm.oz)+" USD":"---")+"</div></div>";
   });
   h+='</div></div>';
 
