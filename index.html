@@ -14,7 +14,7 @@
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
   --bg:#080808;--surface:#111;--surface2:#181818;--border:#222;--border2:#2e2e2e;
-  --text:#F2F2F2;--muted:#888;--faint:#555;
+  --text:#F2F2F2;--muted:#999;--faint:#777;
   --gold:#C9922A;--gold-light:#E8B84B;--silver:#BCBCBC;--plat:#8AABBD;--plat-dim:#8AABBD33;
   --mono:'Roboto Mono',monospace;--sans:'DM Sans',system-ui;
 }
@@ -46,7 +46,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .metal-tab{padding:12px 6px;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;cursor:pointer;text-align:center;transition:all .15s}
 .metal-tab-icon{font-size:20px;margin-bottom:4px}
 .metal-tab-name{font-size:11px;font-weight:600;letter-spacing:.3px}
-.metal-tab-price{font-size:9px;font-family:var(--mono);margin-top:3px;opacity:.7}
+.metal-tab-price{font-size:9px;font-family:var(--mono);margin-top:3px;opacity:.9}
 .metal-tab.act-gold{background:#1A1100;border-color:var(--gold);color:var(--gold-light)}
 .metal-tab.act-silver{background:#161616;border-color:var(--silver);color:var(--silver)}
 .metal-tab.act-plat{background:#0D141A;border-color:var(--plat);color:var(--plat)}
@@ -164,7 +164,8 @@ function buildHTML(){
     h+='<div class="metal-tab'+(isAct?" "+metalActClass(mk):"")+'" data-mk="'+mk+'" onclick="selectMetal(this.dataset.mk)">'+
        '<div class="metal-tab-icon">'+mm.icon+'</div>'+
        '<div class="metal-tab-name">'+mm.name+'</div>'+
-       '<div class="metal-tab-price">'+(gpp>0?fmtGR(gpp)+" USD":"---")+'</div></div>';
+       '<div class="metal-tab-price">'+(gpp>0?fmtGR(gpp)+" USD/gr":"---")+'</div>'+
+       '<div style="font-size:9px;font-family:var(--mono);margin-top:2px;opacity:.85;color:#C9922A">'+(mm.oz>0?fmtOZ(mm.oz)+" USD/oz":"")+"</div></div>";
   });
   h+='</div></div>';
 
